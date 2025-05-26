@@ -33,6 +33,7 @@
 		F9A20F342DE4635B00E5E362 /* Exceptions for "CountryList" folder in "CountryList" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"Helpers/Colors+Extensions.swift",
 				Info.plist,
 			);
 			target = F9A20EE52DE445C000E5E362 /* CountryList */;

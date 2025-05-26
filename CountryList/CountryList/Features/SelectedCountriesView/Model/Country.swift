@@ -14,11 +14,7 @@ struct Country: Identifiable, Codable, Equatable, Hashable {
     let name: String
     let capital: String?
     let currencies: [Currency]?
-    
-    // Flag URL string 
     let flag: String?
-    
-    // Flags object 
     let flags: Flags?
     
     private enum CodingKeys: String, CodingKey {
