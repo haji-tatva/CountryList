@@ -85,19 +85,33 @@ extension CountrySearchView {
     }
     
     // MARK: Country List
+    @ViewBuilder
     private var countryList: some View {
-        List(viewModel.filteredCountries.indices, id: \.self) { index in
-            let country = viewModel.filteredCountries[index]
-            HStack(alignment: .center, spacing: ConstantsValue.spacing) {
-                CountryFlagView(country: country)
-                    .frame(width: ConstantsValue.flagWidth, height: ConstantsValue.flagHeight)
-                    .clipShape(RoundedRectangle(cornerRadius: ConstantsValue.cornerRadius))
-                    .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
-                CountryInfoView(country: country)
-                Spacer(minLength: ConstantsValue.zeroSpacing)
-                countryActionButton(for: country)
+        if viewModel.filteredCountries.isEmpty {
+            Spacer()
+            HStack {
+                Spacer()
+                Text(String.CountrySearchView.noResult)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+                    .padding()
+                Spacer()
             }
-            .listRowBackground(Color.clear)
+            Spacer()
+        } else {
+            List(viewModel.filteredCountries.indices, id: \.self) { index in
+                let country = viewModel.filteredCountries[index]
+                HStack(alignment: .center, spacing: ConstantsValue.spacing) {
+                    CountryFlagView(country: country)
+                        .frame(width: ConstantsValue.flagWidth, height: ConstantsValue.flagHeight)
+                        .clipShape(RoundedRectangle(cornerRadius: ConstantsValue.cornerRadius))
+                        .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
+                    CountryInfoView(country: country)
+                    Spacer(minLength: ConstantsValue.zeroSpacing)
+                    countryActionButton(for: country)
+                }
+                .listRowBackground(Color.clear)
+            }
         }
     }
     

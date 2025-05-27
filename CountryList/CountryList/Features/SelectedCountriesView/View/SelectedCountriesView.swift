@@ -32,8 +32,11 @@ struct SelectedCountriesView: View {
         static let headerFontSize: CGFloat = 16
         static let buttonFontSize: CGFloat = 20
         static let buttonHeight: CGFloat = 50
+        static let buttonTryAgainFontSize: CGFloat = 14
+        static let buttonTryAgainHeight: CGFloat = 30
         static let bottomSpacing: CGFloat = 30
         static let viewSpacing: CGFloat = 12
+        static let tryAgainCornerRadius: CGFloat = 15
     }
     
     // MARK: - Body
@@ -74,7 +77,42 @@ extension SelectedCountriesView {
             headerView
             if viewModel.locationManager.isLocationLoading {
                 Spacer()
-            } else if viewModel.selectedCountries.isEmpty {
+            } else if viewModel.allCountries.isEmpty && Reachability.shared.connection == .none {
+                // MARK: Empty view
+                Spacer()
+                HStack {
+                    Spacer()
+                    Text(String.SelectedCountries.noInternetConnection)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.secondary)
+                        .padding()
+                        .padding(.bottom, ConstantsValue.inLineSpacing)
+                    Spacer()
+                }
+                Button {
+                    guard Reachability.shared.connection != .none else { return }
+                    Task {
+                        await viewModel.fetchCountries(with: cdCountries.map({ $0 }))
+                        await viewModel.setupDefaultCountry(with: cdCountries.map({ $0 }))
+                    }
+                } label: {
+                    HStack {
+                        Text(String.SelectedCountries.tryAgain)
+                            .font(.system(size: ConstantsValue.buttonTryAgainFontSize, weight: .medium))
+                            .frame(height: ConstantsValue.buttonTryAgainHeight)
+                            .padding(ConstantsValue.inLineSpacing)
+                    }
+                    .foregroundColor(.black.opacity(0.8))
+                    .background(
+                        RoundedRectangle(cornerRadius: ConstantsValue.tryAgainCornerRadius)
+                            .stroke(Color.black.opacity(0.8), lineWidth: 1)
+                            .frame(height: ConstantsValue.buttonTryAgainHeight)
+                    )
+                }
+                .frame(maxWidth: .infinity)
+                .buttonStyle(.plain)
+                Spacer()
+            }  else if viewModel.selectedCountries.isEmpty {
                 // MARK: Empty view
                 Spacer()
                 HStack {
@@ -130,7 +168,7 @@ extension SelectedCountriesView {
                                     .font(.headline)
                                     .foregroundColor(.primary)
                                 if let capital = country.capital {
-                                    Text("\(DetailView.capitalName) \(capital)")
+                                    Text("\(String.DetailView.capitalName) \(capital)")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
@@ -166,6 +204,7 @@ extension SelectedCountriesView {
             .background(Color.black.cornerRadius(ConstantsValue.cornerRadius))
         }
         .buttonStyle(.plain)
+        .disabled(viewModel.allCountries.isEmpty)
     }
 
 }
