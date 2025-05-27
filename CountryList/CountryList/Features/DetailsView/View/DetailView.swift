@@ -22,6 +22,7 @@ struct DetailView: View {
         static let headerFontSize: CGFloat = 22
         static let titleFontSize: CGFloat = 12
         static let descriptionFontSize: CGFloat = 16
+        static let backBtnHeight: CGFloat = 20
         static let headerheight: CGFloat = 44
         static let viewSpacing: CGFloat = 12
         static let detailSpacing: CGFloat = 4
@@ -61,7 +62,7 @@ extension DetailView {
                     Image(systemName: "chevron.left")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 20, height: 20)
+                        .frame(width: ConstantsValue.backBtnHeight, height: ConstantsValue.backBtnHeight)
                         .foregroundColor(.black)
                 }
                 .padding(.leading)

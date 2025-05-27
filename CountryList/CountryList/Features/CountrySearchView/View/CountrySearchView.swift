@@ -10,11 +10,17 @@ import SwiftUI
 // Country list with search View
 struct CountrySearchView: View {
     
+    // MARK: - CoreData Properties
+    @FetchRequest(
+        sortDescriptors: [SortDescriptor(\.name, order: .forward)]
+    )
+    private var cdCountries: FetchedResults<CDCountry>
+    
     // MARK: - Properties
     @ObservedObject var viewModel: CountryViewModel
     @Environment(\.dismiss) private var dismiss
     
-    let maxCountries: Int = 5
+    let maxCountries = 5
     
     struct ConstantsValue {
         static let spacing: CGFloat = 16
@@ -26,6 +32,7 @@ struct CountrySearchView: View {
         static let inLineSpacing: CGFloat = 8
         static let headerFontSize: CGFloat = 22
         static let headerheight: CGFloat = 44
+        static let backBtnHeight: CGFloat = 20
     }
     
     // MARK: - Body
@@ -61,7 +68,7 @@ extension CountrySearchView {
                     Image(systemName: "chevron.left")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 20, height: 20)
+                        .frame(width: ConstantsValue.backBtnHeight, height: ConstantsValue.backBtnHeight)
                         .foregroundColor(.black)
                 }
                 .frame(width: ConstantsValue.iconWidth, height: ConstantsValue.iconWidth)
@@ -98,13 +105,15 @@ extension CountrySearchView {
     // otherwise shows plus button (disabled if limit reached)
     @ViewBuilder
     private func countryActionButton(for country: Country) -> some View {
-        let isSelected = viewModel.displayedCountries.contains(country)
-        let isDisabled = viewModel.displayedCountries.count >= maxCountries
+        let isSelected = viewModel.selectedCountries.contains(country)
+        let isDisabled = viewModel.selectedCountries.count >= maxCountries
         Button {
             if isSelected {
-                viewModel.removeCountry(country)
+                viewModel.removeCountry(from: country,
+                                        cdCountries.map({ $0 }))
             } else {
-                viewModel.addCountry(country)
+                viewModel.addCountry(from: country,
+                                     cdCountries.map({ $0 }))
             }
         } label: {
             Image(systemName: isSelected ? "trash" : "plus")

@@ -11,12 +11,15 @@ import SwiftUI
 // Selected countries view (if location permission allowed then your country by default selected)
 struct SelectedCountriesView: View {
     
+    // MARK: - CoreData Properties
+    @FetchRequest(
+        sortDescriptors: [SortDescriptor(\.name, order: .forward)]
+    )
+    private var cdCountries: FetchedResults<CDCountry>
+    
     // MARK: - Properties
-    @StateObject private var viewModel = CountryViewModel()
-    @StateObject private var locationManager = LocationManager()
+    @ObservedObject private var viewModel = CountryViewModel()
     @State private var path = NavigationPath()
-    @State private var isFirstLaunch = AppSettings.isFirstLaunch
-    @State private var reloadTrigger = false
     
     struct ConstantsValue {
         static let spacing: CGFloat = 16
@@ -45,18 +48,16 @@ struct SelectedCountriesView: View {
                     }
                 }
                 .overlay {
-                    if locationManager.isLocationLoading {
-                        Color.black.opacity(0.25)
-                            .ignoresSafeArea()
-                        ProgressView("Fetching location…")
+                    if viewModel.locationManager.isLocationLoading {
+                        Color.black.opacity(0.25).ignoresSafeArea()
+                        ProgressView(String.SelectedCountries.progressTitle)
                     }
                 }
-                .task {
-                    if AppSettings.shouldCheckLocation {
-                        locationManager.requestPermissionAndLocation()
+                .onAppear {
+                    Task {
+                        await viewModel.fetchCountries(with: cdCountries.map({ $0 }))
+                        await viewModel.setupDefaultCountry(with: cdCountries.map({ $0 }))
                     }
-                    viewModel.fetchCountries()
-                    await setupDefaultCountry()
                 }
         }
     }
@@ -71,14 +72,14 @@ extension SelectedCountriesView {
         VStack(alignment: .leading, spacing: ConstantsValue.zeroSpacing) {
             // MARK: Header
             headerView
-            if locationManager.isLocationLoading {
+            if viewModel.locationManager.isLocationLoading {
                 Spacer()
-            } else if viewModel.displayedCountries.isEmpty {
+            } else if viewModel.selectedCountries.isEmpty {
                 // MARK: Empty view
                 Spacer()
                 HStack {
                     Spacer()
-                    Text("No countries added yet.")
+                    Text(String.SelectedCountries.nocountriesAdded)
                         .foregroundColor(.secondary)
                         .padding()
                     Spacer()
@@ -87,11 +88,9 @@ extension SelectedCountriesView {
             } else {
                 // MARK: Selected countries view
                 selectedCountriesView
-                    .id(reloadTrigger)
+                    .id(viewModel.reloadTrigger)
             }
             searchButtonView
-                .frame(maxWidth: .infinity)
-                .background(Color.black.cornerRadius(ConstantsValue.cornerRadius))
                 .padding(.horizontal, ConstantsValue.spacing)
                 .padding(.vertical, ConstantsValue.inLineSpacing)
             Spacer()
@@ -104,7 +103,7 @@ extension SelectedCountriesView {
         VStack(alignment: .leading, spacing: ConstantsValue.inLineSpacing) {
             Text(String.SelectedCountries.navigationTitle)
                 .font(.largeTitle.bold())
-            if !viewModel.displayedCountries.isEmpty {
+            if !viewModel.selectedCountries.isEmpty {
                 Text(String.SelectedCountries.headerTitle)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .font(.system(size: ConstantsValue.headerFontSize, weight: .medium))
@@ -119,7 +118,7 @@ extension SelectedCountriesView {
     private var selectedCountriesView: some View {
         ScrollView {
             LazyVStack(spacing: ConstantsValue.zeroSpacing) {
-                ForEach(viewModel.displayedCountries) { country in
+                ForEach(viewModel.selectedCountries) { country in
                     NavigationLink(value: country) {
                         HStack(spacing: ConstantsValue.spacing) {
                             CountryFlagView(country: country)
@@ -131,14 +130,15 @@ extension SelectedCountriesView {
                                     .font(.headline)
                                     .foregroundColor(.primary)
                                 if let capital = country.capital {
-                                    Text("Capital: \(capital)")
+                                    Text("\(DetailView.capitalName) \(capital)")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
                             }
                             Spacer()
                             Button(action: {
-                                viewModel.removeCountry(country)
+                                viewModel.removeCountry(from: country,
+                                                        cdCountries.map({ $0 }))
                             }) {
                                 Image(systemName: "trash")
                                     .foregroundColor(.black)
@@ -158,56 +158,14 @@ extension SelectedCountriesView {
             path.append("search")
         } label: {
             HStack {
-                Text("Search Country")
+                Text(String.SelectedCountries.searchBtnTitle)
                     .font(.system(size: ConstantsValue.buttonFontSize, weight: .medium))
             }
-            .frame(height: ConstantsValue.buttonHeight)
+            .frame(maxWidth: .infinity, maxHeight: ConstantsValue.buttonHeight)
             .foregroundColor(.white)
+            .background(Color.black.cornerRadius(ConstantsValue.cornerRadius))
         }
+        .buttonStyle(.plain)
     }
 
-}
-
-// MARK: - Helper methods -
-extension SelectedCountriesView {
-    
-    // Helper async function that waits until Api loading is complete
-    private func waitForApiLoading() async {
-        while viewModel.isApiLoading {
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 s
-        }
-    }
-    
-    // Helper async function that waits until location loading is complete
-    private func waitForLocationLoading() async {
-        while locationManager.isLocationLoading {
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 s
-        }
-    }
-    
-}
-
-// MARK: - Helper methods -
-extension SelectedCountriesView {
-    
-    // MARK: - Setup default country
-    private func setupDefaultCountry() async {
-        // Wait until locationManager finishes loading location info
-        if isFirstLaunch {
-            await waitForLocationLoading()
-            await waitForApiLoading()
-            // Check detected country name from locationManager
-            if let detectedCountryName = locationManager.country, !detectedCountryName.isEmpty {
-                // Location permission allowed and country detected
-                viewModel.setDefaultCountryIfNeeded(detectedCountryName: detectedCountryName)
-            } else if viewModel.displayedCountries.isEmpty,
-                      let first = viewModel.allCountries.first {
-                viewModel.addCountry(first)
-                reloadTrigger.toggle()
-            }
-        } else {
-            locationManager.isLocationLoading = false
-        }
-    }
-    
 }

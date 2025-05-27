@@ -5,8 +5,6 @@
 //  Created by MACM23 on 26/05/25.
 //
 
-
-
 import Foundation
 
 struct Country: Identifiable, Codable, Equatable, Hashable {
@@ -17,7 +15,7 @@ struct Country: Identifiable, Codable, Equatable, Hashable {
     let flag: String?
     let flags: Flags?
     
-    private enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case id = "alpha3Code"
         case name, capital, currencies, flag, flags
     }
@@ -46,3 +44,17 @@ struct Currency: Codable, Equatable, Hashable {
     let name: String?
 }
 
+extension Country {
+    init(_ cd: CDCountry) {
+        self.id        = cd.id ?? UUID().uuidString
+        self.name      = cd.name ?? "Unknown"
+        self.capital   = cd.capital
+        self.flag      = cd.flag
+        self.flags     = Flags(svg: cd.flags?.svg, png: cd.flags?.png)
+        if let set = cd.currencies as? Set<CDCurrency> {
+            self.currencies = set.map { Currency(code: $0.code, name: $0.currencyName) }
+        } else {
+            self.currencies = nil
+        }
+    }
+}

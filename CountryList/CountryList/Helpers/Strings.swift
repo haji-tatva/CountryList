@@ -27,7 +27,5 @@ extension String {
     enum CountrySearchView {
         static let navigationTitle = "Country Search"
         static let searchForACountry = "Search for a country"
-        static let capitalName = "Capital:"
-        static let currencyName = "Currency:"
     }
 }
