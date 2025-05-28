@@ -12,6 +12,7 @@ import SwiftUICore
 import SwiftUI
 
 // MARK: - CountryViewModel
+@MainActor
 class CountryViewModel: ObservableObject {
 
     // MARK: Published
@@ -40,7 +41,6 @@ class CountryViewModel: ObservableObject {
     }
 
     // MARK: Fetch countries API
-    @MainActor
     func fetchCountries(with allLocalCountries: [CDCountry]? = []) async {
         if !hasLocationChecked {
             locationManager.requestPermissionAndLocation()
