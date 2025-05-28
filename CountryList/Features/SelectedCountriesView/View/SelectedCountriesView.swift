@@ -167,6 +167,7 @@ extension SelectedCountriesView {
                                 Text(country.name)
                                     .font(.headline)
                                     .foregroundColor(.primary)
+                                    .multilineTextAlignment(.leading)
                                 if let capital = country.capital {
                                     Text("\(String.DetailView.capitalName) \(capital)")
                                         .font(.caption)

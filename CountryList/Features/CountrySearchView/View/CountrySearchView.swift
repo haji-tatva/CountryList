@@ -39,6 +39,9 @@ struct CountrySearchView: View {
     var body: some View {
         mainView
             .navigationBarBackButtonHidden()
+            .onDisappear {
+                viewModel.searchText = ""
+            }
     }
     
 }

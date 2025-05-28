@@ -45,6 +45,7 @@ extension SearchBarView {
             TextField(placeholder, text: $searchText)
                 .autocapitalization(.none)
                 .disableAutocorrection(true)
+                .tint(.black)
             // Clear Button - shown when searchText is not empty
             if !searchText.isEmpty {
                 Button {
