@@ -14,15 +14,25 @@ struct CountryFlagView: View {
     // MARK: - Properties
     let country: Country
     
-    struct ConstantsValue {
-        static let cornerRadius: CGFloat = 4
-    }
-    
     // MARK: - Body
     var body: some View {
         if let urlString = country.bestFlagURL,
            let url = URL(string: urlString) {
-            AsyncCachedImage(url: url)
+            CacheAsyncImage(url: url) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFit()
+                default:
+                    Image(systemName: "photo")
+                        .resizable()
+                        .scaledToFit()
+                }
+            }
         } else {
             // MARK: Show Progress While Loading
             ProgressView()

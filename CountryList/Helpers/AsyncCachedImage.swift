@@ -52,11 +52,11 @@ struct AsyncCachedImage: View {
         defer { isLoading = false }
         imageLoadingTask = Task.detached {
             await MainActor.run { isLoading = true }
-            if let image = try? await ImageCacheManager.shared.image(for: url) {
-                await MainActor.run {
-                    self.image = image
-                }
-            }
+//            if let image = try? await ImageCacheManager.shared.image(for: url) {
+//                await MainActor.run {
+//                    self.image = image
+//                }
+//            }
         }
     }
 }
