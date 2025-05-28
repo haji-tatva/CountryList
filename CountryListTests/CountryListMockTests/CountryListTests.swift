@@ -70,4 +70,42 @@ final class CountryListTests: XCTestCase {
         }
     }
     
+    func testSetupDefaultCountry() {
+        Task { @MainActor in
+            let mockCountries = Constants.mockCountiesData
+            let viewModel = createViewModel(with: mockCountries)
+            // Ensure it behaves like first launch
+            viewModel.hasLaunchedBefore = false
+            viewModel.hasLocationChecked = true
+            // Simulate fetch and setup core data
+            await viewModel.fetchCountries()
+            let cdCountries = createMockCoreData(with: viewModel.allCountries, context: viewModel.context)
+            await viewModel.setupDefaultCountry(with: cdCountries)
+            XCTAssertTrue(viewModel.hasLaunchedBefore)
+            XCTAssertFalse(viewModel.selectedCountries.isEmpty)
+            if let selected = viewModel.selectedCountries.first {
+                XCTAssertTrue(cdCountries.contains(where: { $0.id == selected.id && $0.isSaved }))
+            }
+        }
+    }
+    
+    func testFilteredCountries() {
+        Task { @MainActor in
+            let viewModel = createViewModel(with: Constants.mockCountiesData)
+            await viewModel.fetchCountries()
+            viewModel.searchText = "Albania"
+            let filtered = viewModel.filteredCountries
+            XCTAssertEqual(filtered.count, 1)
+            XCTAssertEqual(filtered.first?.name, "Albania")
+            // When: search text matches multiple
+            viewModel.searchText = "A"
+            let multiFiltered = viewModel.filteredCountries
+            XCTAssertGreaterThanOrEqual(multiFiltered.count, 1)
+            // When: search text matches none
+            viewModel.searchText = "Zzz"
+            let emptyFiltered = viewModel.filteredCountries
+            XCTAssertEqual(emptyFiltered.count, 0)
+        }
+    }
+    
 }
