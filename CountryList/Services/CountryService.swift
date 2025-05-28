@@ -8,9 +8,13 @@
 
 import Foundation
 
+protocol CountryServiceImp {
+    func fetchAllCountries() async throws -> [Country]
+}
+
 // MARK: - CountryService
 /// Responsible for fetching country data from the REST Countries API.
-class CountryService {
+class CountryService: CountryServiceImp {
     
     // MARK: Properties
     private let session: URLSession

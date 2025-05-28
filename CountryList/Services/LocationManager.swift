@@ -10,10 +10,16 @@
 import CoreLocation
 import Foundation
 
+protocol LocationManagerImp: ObservableObject {
+    var country: String? { get set }
+    var isLocationLoading: Bool { get set }
+    func requestPermissionAndLocation()
+}
+
 // MARK: - LocationManager
 /// Handles location permission requests and resolves the user’s country name.
 /// Publishes the detected country (or `""` if unavailable) and a loading flag.
-final class LocationManager: NSObject, ObservableObject {
+final class LocationManager: NSObject, ObservableObject, LocationManagerImp {
     
     // MARK: Properties
     private let manager = CLLocationManager()

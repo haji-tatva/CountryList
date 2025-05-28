@@ -19,32 +19,44 @@ class CountryViewModel: ObservableObject {
     @Published var selectedCountries: [Country] = []
     @Published var searchText = ""
     @Published var reloadTrigger = false
-    @ObservedObject var locationManager = LocationManager()
+    @Published var locationManager: any LocationManagerImp
     @AppStorage(AppKeys.hasLaunchedBefore) var hasLaunchedBefore = false
     @AppStorage(AppKeys.hasLocationChecked) var hasLocationChecked = false
+    let service: CountryServiceImp
+    let context: NSManagedObjectContext
     
     // MARK: Private
-    private let service = CountryService()
-    private let context = PersistenceController.shared.container.viewContext
     private let maxCountries = 5
 
+    // MARK: Init method
+    init(
+        service: CountryServiceImp = CountryService(),
+        locationManager: any LocationManagerImp = LocationManager(),
+        context: NSManagedObjectContext = PersistenceController.shared.container.viewContext
+    ) {
+        self.service = service
+        self.locationManager = locationManager
+        self.context = context
+    }
+
     // MARK: Fetch countries API
-    func fetchCountries(with allLocalCountries: [CDCountry]) async {
+    @MainActor
+    func fetchCountries(with allLocalCountries: [CDCountry]? = []) async {
         if !hasLocationChecked {
             locationManager.requestPermissionAndLocation()
             hasLocationChecked = true
         }
-        selectedCountries = allLocalCountries.filter { $0.isSaved }.map(Country.init)
+        selectedCountries = allLocalCountries?.filter { $0.isSaved }.map(Country.init) ?? []
         do {
             let countries = try await service.fetchAllCountries()
-            mergeCountriesIntoCoreData(with: countries, allLocalCountries)
+            mergeCountriesIntoCoreData(with: countries, allLocalCountries ?? [])
             allCountries = countries
         } catch {
-            allCountries = allLocalCountries.map(Country.init)
+            allCountries = allLocalCountries?.map(Country.init) ?? []
         }
     }
 
-    // MARK: Add/Remove user‑saved countries
+    // Add/Remove user‑saved countries
     func addCountry(from country: Country,
                     _ cdCountries: [CDCountry]) {
         guard selectedCountries.count < maxCountries,
@@ -59,7 +71,7 @@ class CountryViewModel: ObservableObject {
         updateSavedFlagsInCoreData(allCountries: cdCountries)
     }
 
-    // MARK: Core Data helpers
+    // Core Data helpers
     private func mergeCountriesIntoCoreData(with countries: [Country],
                                             _ allCountries: [CDCountry]) {
         for country in countries {
@@ -96,7 +108,7 @@ class CountryViewModel: ObservableObject {
         return countries.first(where: { $0.id == id })
     }
 
-    // MARK: Helpers for nested data
+    // Helpers for nested data
     private func merge(_ flags: Flags?,
                        into country: CDCountry) {
         guard let flags = flags else { return }
@@ -129,7 +141,7 @@ class CountryViewModel: ObservableObject {
         }
     }
 
-    // MARK: Filtering
+    // Filtering
     var filteredCountries: [Country] {
         guard !searchText.isEmpty else { return allCountries }
         let needle = searchText.lowercased()
